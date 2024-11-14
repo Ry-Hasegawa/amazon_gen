@@ -5,34 +5,23 @@ import pandas as pd
 st.markdown(
     """
     <style>
-    .chat-box {
-        padding: 15px;
+    .highlight-box {
+        padding: 10px;
         margin: 10px 0;
-        border-radius: 10px;
-        background-color: #f1f1f1;
-        box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+        border-radius: 8px;
+        background-color: #e6f7ff;
         font-family: Arial, sans-serif;
     }
-    .user-message {
-        background-color: #e0ffe6;
-        color: #2d7a36;
+    .title-highlight {
+        background-color: #dff0d8;
         padding: 10px;
-        border-radius: 10px;
-        margin: 5px 0;
-        font-weight: bold;
+        border-radius: 8px;
     }
-    .bot-message {
-        background-color: #d6e4ff;
-        color: #1a3e79;
+    .important-message {
+        background-color: #fcf8e3;
         padding: 10px;
-        border-radius: 10px;
-        margin: 5px 0;
+        border-radius: 8px;
         font-weight: bold;
-    }
-    .header-title {
-        font-size: 24px;
-        color: #333;
-        margin-bottom: 20px;
     }
     </style>
     """,
@@ -67,7 +56,7 @@ if "messages" not in st.session_state:
 # チャット履歴の表示
 def show_chat_messages():
     for msg in st.session_state["messages"]:
-        st.chat_message(msg["role"]).write(msg["content"])
+        st.chat_message(msg["role"]).markdown(msg["content"])
 
 
 # チャット履歴の表示関数呼び出し
@@ -91,7 +80,7 @@ if user_input:
 
             # 商品情報表示と案内メッセージ
             assistant_msg = (
-                "この商品情報でよろしいですか？「はい」と入力してください。\n\n"
+                "**この商品情報でよろしいですか？「はい」と入力してください。**\n\n"
                 f"- **ASIN:** {product_info['ASIN']}\n"
                 f"- **商品タイトル:** {product_info['タイトル']}\n"
                 f"- **商品説明:** {product_info['説明文']}\n"
@@ -119,11 +108,11 @@ if user_input:
     ):
         product_info = st.session_state["product_info"]
         assistant_msg = (
-            "タイトル提案:\n\n"
+            "**タイトル提案:**\n\n"
             f"- **提案1:** {product_info['タイトル提案1']}\n"
             f"- **提案2:** {product_info['タイトル提案2']}\n"
             f"- **提案3:** {product_info['タイトル提案3']}\n\n"
-            "「次へ」と入力して訴求軸を確認してください。"
+            "**「次へ」と入力して訴求軸を確認してください。**"
         )
         st.session_state["messages"].append(
             {"role": "assistant", "content": assistant_msg}
@@ -136,14 +125,21 @@ if user_input:
         and user_input.lower() == "次へ"
     ):
         product_info = st.session_state["product_info"]
-        assistant_msg = (
-            "訴求軸:\n\n"
-            f"- **自社製品訴求軸:** \n{product_info['自社製品訴求軸']}\n"
-            f"- **競合訴求軸:** \n{product_info['競合訴求軸']}\n\n"
-            "「次へ」と入力して箇条書き説明を確認してください。"
+
+        # 訴求軸を「:」で分割して改行しながら表示
+        def format_appeal_points(text):
+            # Split by ":" and filter out empty strings
+            points = [p.strip() for p in text.split(":") if p.strip()]
+            return "\n".join(f"  - {p}" for p in points)
+
+        formatted_appeal_points = (
+            "### 訴求軸:\n\n"
+            f"**自社製品訴求軸:**\n{format_appeal_points(product_info['自社製品訴求軸'])}\n\n"
+            f"**競合訴求軸:**\n{format_appeal_points(product_info['競合訴求軸'])}\n\n"
+            "**「次へ」と入力して箇条書き説明を確認してください。**"
         )
         st.session_state["messages"].append(
-            {"role": "assistant", "content": assistant_msg}
+            {"role": "assistant", "content": formatted_appeal_points}
         )
         st.session_state["current_step"] = "bullet_points"
 
@@ -162,10 +158,11 @@ if user_input:
             return "\n".join(f"- {p}" for p in points)
 
         formatted_bullet_points = (
-            f"**提案1**:\n{format_bullet_points(product_info['箇条書き説明提案1_1'])}\n\n"
-            f"**提案2**:\n{format_bullet_points(product_info['箇条書き説明提案1_2'])}\n\n"
-            f"**提案3**:\n{format_bullet_points(product_info['箇条書き説明提案1_3'])}\n\n"
-            "「次へ」と入力して詳細な説明文を確認してください。"
+            f"**提案1**:\n{format_bullet_points(product_info['箇条書き説明提案1'])}\n\n"
+            f"**提案2**:\n{format_bullet_points(product_info['箇条書き説明提案2'])}\n\n"
+            f"**提案3**:\n{format_bullet_points(product_info['箇条書き説明提案3'])}\n\n"
+            f"**提案4**:\n{format_bullet_points(product_info['箇条書き説明提案4'])}\n\n"
+            "**「次へ」と入力して詳細な説明文を確認してください。**"
         )
 
         st.session_state["messages"].append(
@@ -180,11 +177,12 @@ if user_input:
     ):
         product_info = st.session_state["product_info"]
         assistant_msg = (
-            "詳細説明文提案:\n\n"
+            "### 詳細説明文提案:\n\n"
             f"- **説明1:** {product_info['説明文提案1']}\n"
             f"- **説明2:** {product_info['説明文提案2']}\n"
             f"- **説明3:** {product_info['説明文提案3']}\n\n"
-            "次の商品を提案したい場合、再度URLを入力してください。"
+            "次の商品を提案したい場合、再度URLを入力してください。\n\n"
+            f"**参考にした競合商品:**\n- {product_info['競合タイトル']}\n- {product_info['競合2タイトル']}"
         )
         st.session_state["messages"].append(
             {"role": "assistant", "content": assistant_msg}
@@ -200,7 +198,7 @@ if user_input:
 
     # 想定されるメッセージが入力されなかった場合
     else:
-        st.session_state["messages"].append(
+        st.session.state["messages"].append(
             {
                 "role": "assistant",
                 "content": "無効なメッセージです。全て最初からやり直してください。",
