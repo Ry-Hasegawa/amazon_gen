@@ -51,131 +51,170 @@ st.markdown(
 
 # セッションステートの初期化
 if "current_step" not in st.session_state:
-    st.session_state["current_step"] = "confirmation"  # 初期ステップ
-if "input_text" not in st.session_state:
-    st.session_state["input_text"] = ""
+    st.session_state["current_step"] = "url_input"
 if "product_info" not in st.session_state:
     st.session_state["product_info"] = None
+if "messages" not in st.session_state:
+    # 最初の案内メッセージを設定
+    st.session_state["messages"] = [
+        {
+            "role": "assistant",
+            "content": "商品説明を生成したい商品のURLを入力してください。",
+        }
+    ]
 
-# チャット形式の入力
-user_input = st.chat_input("URLを入力してください")
 
+# チャット履歴の表示
+def show_chat_messages():
+    for msg in st.session_state["messages"]:
+        st.chat_message(msg["role"]).write(msg["content"])
+
+
+# チャット履歴の表示関数呼び出し
+show_chat_messages()
+
+# 入力プロンプトのメッセージは常に「メッセージを入力してください」
+user_input = st.chat_input("メッセージを入力してください")
+
+# ユーザーからの入力があった場合
 if user_input:
-    st.session_state["input_text"] = user_input
+    st.session_state["messages"].append({"role": "user", "content": user_input})
 
-    if st.session_state["current_step"] == "confirmation" and "http" in user_input:
-        # 入力されたURLから該当商品のデータを抽出
+    # ステップ 1: URL入力ステップ
+    if st.session_state["current_step"] == "url_input" and "http" in user_input:
         product_row = data[data["URL"] == user_input.strip()]
 
         if not product_row.empty:
             # 商品情報をセッションステートに保存
             st.session_state["product_info"] = product_row.iloc[0]
-
-            # 商品情報を表示
             product_info = st.session_state["product_info"]
-            st.markdown(
-                f"""
-                <div class="chat-box bot-message">
-                <p><strong>この商品情報でよろしいですか？</strong></p>
-                <p><strong>提案を生成する場合は「はい」と入力してください。</strong></p>
-                <p><strong>ASIN:</strong> {product_info['ASIN']}</p>
-                <p><strong>商品タイトル:</strong> {product_info['タイトル']}</p>
-                <p><strong>商品説明:</strong> {product_info['説明文']}</p>
-                <p><strong>価格:</strong> {product_info['価格']} 円</p>
-                <p><strong>販売個数:</strong> {product_info['販売個数']} 個</p>
-                <p><strong>売上:</strong> {product_info['売上']} 円</p>
-                <p><strong>カテゴリ:</strong> {product_info['カテゴリ']}</p>
-                </div>
-                """,
-                unsafe_allow_html=True,
+
+            # 商品情報表示と案内メッセージ
+            assistant_msg = (
+                "この商品情報でよろしいですか？「はい」と入力してください。\n\n"
+                f"- **ASIN:** {product_info['ASIN']}\n"
+                f"- **商品タイトル:** {product_info['タイトル']}\n"
+                f"- **商品説明:** {product_info['説明文']}\n"
+                f"- **価格:** {product_info['価格']} 円\n"
+                f"- **販売個数:** {product_info['販売個数']} 個\n"
+                f"- **売上:** {product_info['売上']} 円\n"
+                f"- **カテゴリ:** {product_info['カテゴリ']}\n"
             )
-            st.session_state["current_step"] = "competitor_1"
+            st.session_state["messages"].append(
+                {"role": "assistant", "content": assistant_msg}
+            )
+            st.session_state["current_step"] = "title_proposal"
         else:
-            st.markdown(
-                f"""
-                <div class="chat-box bot-message">
-                <p>入力されたURLに該当する商品が見つかりません。URLを再確認してください。</p>
-                </div>
-                """,
-                unsafe_allow_html=True,
+            st.session_state["messages"].append(
+                {
+                    "role": "assistant",
+                    "content": "入力されたURLに該当する商品が見つかりません。URLを再確認してください。",
+                }
             )
 
+    # ステップ 2: タイトル提案ステップ
     elif (
-        st.session_state["current_step"] == "competitor_1"
+        st.session_state["current_step"] == "title_proposal"
         and user_input.lower() == "はい"
     ):
         product_info = st.session_state["product_info"]
-        st.markdown(
-            f"""
-            <div class="chat-box bot-message">
-            <p><strong>提案 - 競合商品1を参考にした内容</strong></p>
-            <p><strong>提案タイトル:</strong></p>
-            <ul>
-                <li>{product_info['タイトル提案1_1']}</li>
-                <li>{product_info['タイトル提案1_2']}</li>
-                <li>{product_info['タイトル提案1_3']}</li>
-            </ul>
-            <p><strong>箇条書き説明:</strong></p>
-            <ul>
-                <li>{product_info['箇条書き説明提案1_1']}</li>
-                <li>{product_info['箇条書き説明提案1_2']}</li>
-                <li>{product_info['箇条書き説明提案1_3']}</li>
-            </ul>
-            <p><strong>詳細説明文:</strong></p>
-            <ul>
-                <li>{product_info['説明文提案1_1']}</li>
-                <li>{product_info['説明文提案1_2']}</li>
-                <li>{product_info['説明文提案1_3']}</li>
-            </ul>
-            </div>
-            """,
-            unsafe_allow_html=True,
+        assistant_msg = (
+            "タイトル提案:\n\n"
+            f"- **提案1:** {product_info['タイトル提案1']}\n"
+            f"- **提案2:** {product_info['タイトル提案2']}\n"
+            f"- **提案3:** {product_info['タイトル提案3']}\n\n"
+            "「次へ」と入力して訴求軸を確認してください。"
         )
-        st.session_state["current_step"] = "competitor_2"
+        st.session_state["messages"].append(
+            {"role": "assistant", "content": assistant_msg}
+        )
+        st.session_state["current_step"] = "appeal_points"
 
+    # ステップ 3: 訴求軸の提示ステップ
     elif (
-        st.session_state["current_step"] == "competitor_2"
-        and user_input.lower() == "別の提案を見る"
+        st.session_state["current_step"] == "appeal_points"
+        and user_input.lower() == "次へ"
     ):
         product_info = st.session_state["product_info"]
-        st.markdown(
-            f"""
-            <div class="chat-box bot-message">
-            <p><strong>提案 - 競合商品2を参考にした内容</strong></p>
-            <p><strong>提案タイトル:</strong></p>
-            <ul>
-                <li>{product_info['タイトル提案2_1']}</li>
-                <li>{product_info['タイトル提案2_2']}</li>
-                <li>{product_info['タイトル提案2_3']}</li>
-            </ul>
-            <p><strong>箇条書き説明:</strong></p>
-            <ul>
-                <li>{product_info['箇条書き説明提案2_1']}</li>
-                <li>{product_info['箇条書き説明提案2_2']}</li>
-                <li>{product_info['箇条書き説明提案2_3']}</li>
-            </ul>
-            <p><strong>詳細説明文:</strong></p>
-            <ul>
-                <li>{product_info['説明文提案2_1']}</li>
-                <li>{product_info['説明文提案2_2']}</li>
-                <li>{product_info['説明文提案2_3']}</li>
-            </ul>
-            </div>
-            """,
-            unsafe_allow_html=True,
+        assistant_msg = (
+            "訴求軸:\n\n"
+            f"- **自社製品訴求軸:** \n{product_info['自社製品訴求軸']}\n"
+            f"- **競合訴求軸:** \n{product_info['競合訴求軸']}\n\n"
+            "「次へ」と入力して箇条書き説明を確認してください。"
+        )
+        st.session_state["messages"].append(
+            {"role": "assistant", "content": assistant_msg}
+        )
+        st.session_state["current_step"] = "bullet_points"
+
+    # ステップ 4: 箇条書き説明提案ステップ
+    elif (
+        st.session_state["current_step"] == "bullet_points"
+        and user_input.lower() == "次へ"
+    ):
+        product_info = st.session_state["product_info"]
+
+        # 各箇条書き説明を「【」で分割し、見やすい形式で表示（【を保持）
+        def format_bullet_points(bullet_text):
+            points = [
+                f"【{point.strip()}" for point in bullet_text.split("【") if point
+            ]
+            return "\n".join(f"- {p}" for p in points)
+
+        formatted_bullet_points = (
+            f"**提案1**:\n{format_bullet_points(product_info['箇条書き説明提案1_1'])}\n\n"
+            f"**提案2**:\n{format_bullet_points(product_info['箇条書き説明提案1_2'])}\n\n"
+            f"**提案3**:\n{format_bullet_points(product_info['箇条書き説明提案1_3'])}\n\n"
+            "「次へ」と入力して詳細な説明文を確認してください。"
         )
 
+        st.session_state["messages"].append(
+            {"role": "assistant", "content": formatted_bullet_points}
+        )
+        st.session_state["current_step"] = "long_description"
+
+    # ステップ 5: 詳細説明文提案ステップ
+    elif (
+        st.session_state["current_step"] == "long_description"
+        and user_input.lower() == "次へ"
+    ):
+        product_info = st.session_state["product_info"]
+        assistant_msg = (
+            "詳細説明文提案:\n\n"
+            f"- **説明1:** {product_info['説明文提案1']}\n"
+            f"- **説明2:** {product_info['説明文提案2']}\n"
+            f"- **説明3:** {product_info['説明文提案3']}\n\n"
+            "次の商品を提案したい場合、再度URLを入力してください。"
+        )
+        st.session_state["messages"].append(
+            {"role": "assistant", "content": assistant_msg}
+        )
+        # 最初に戻す
+        st.session_state["current_step"] = "url_input"
+        st.session_state["messages"].append(
+            {
+                "role": "assistant",
+                "content": "商品説明を生成したい商品のURLを入力してください。",
+            }
+        )
+
+    # 想定されるメッセージが入力されなかった場合
     else:
-        # 想定されるメッセージが入力されなかった場合
-        st.markdown(
-            f"""
-            <div class="chat-box bot-message">
-            <p>無効なメッセージが入力されました。全て最初からやり直してください。</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
+        st.session_state["messages"].append(
+            {
+                "role": "assistant",
+                "content": "無効なメッセージです。全て最初からやり直してください。",
+            }
         )
         # セッションステートをリセットして最初からやり直し
-        st.session_state["current_step"] = "confirmation"
+        st.session_state["current_step"] = "url_input"
         st.session_state["product_info"] = None
-        st.session_state["input_text"] = ""
+        st.session_state["messages"].append(
+            {
+                "role": "assistant",
+                "content": "商品説明を生成したい商品のURLを入力してください。",
+            }
+        )
+
+    # チャット履歴を更新して表示
+    show_chat_messages()
