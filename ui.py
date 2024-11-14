@@ -29,7 +29,7 @@ st.markdown(
 )
 
 # データの読み込み
-data_path = "UI用データ.xlsx"
+data_path = "./UI用データ.xlsx"
 data = pd.read_excel(data_path)
 
 # タイトルとURL入力
