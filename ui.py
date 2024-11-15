@@ -1,30 +1,31 @@
 import streamlit as st
 import pandas as pd
+import time
 
 # CSSでカスタムスタイリング
 st.markdown(
     """
-    <style>
-    .highlight-box {
-        padding: 10px;
-        margin: 10px 0;
-        border-radius: 8px;
-        background-color: #e6f7ff;
-        font-family: Arial, sans-serif;
-    }
-    .title-highlight {
-        background-color: #dff0d8;
-        padding: 10px;
-        border-radius: 8px;
-    }
-    .important-message {
-        background-color: #fcf8e3;
-        padding: 10px;
-        border-radius: 8px;
-        font-weight: bold;
-    }
-    </style>
-    """,
+	<style>
+	.highlight-box {
+		padding: 10px;
+		margin: 10px 0;
+		border-radius: 8px;
+		background-color: #e6f7ff;
+		font-family: Arial, sans-serif;
+	}
+	.title-highlight {
+		background-color: #dff0d8;
+		padding: 10px;
+		border-radius: 8px;
+	}
+	.important-message {
+		background-color: #fcf8e3;
+		padding: 10px;
+		border-radius: 8px;
+		font-weight: bold;
+	}
+	</style>
+	""",
     unsafe_allow_html=True,
 )
 
@@ -77,10 +78,10 @@ if user_input:
             # 商品情報をセッションステートに保存
             st.session_state["product_info"] = product_row.iloc[0]
             product_info = st.session_state["product_info"]
-
+            time.sleep(3)
             # 商品情報表示と案内メッセージ
             assistant_msg = (
-                "**この商品情報でよろしいですか？「はい」と入力してください。**\n\n"
+                "**この商品情報でよろしいですか？よろしければ「はい」と入力し、タイトル提案に進んでください。**\n\n"
                 f"- **ASIN:** {product_info['ASIN']}\n"
                 f"- **商品タイトル:** {product_info['タイトル']}\n"
                 f"- **商品説明:** {product_info['説明文']}\n"
@@ -107,6 +108,7 @@ if user_input:
         and user_input.lower() == "はい"
     ):
         product_info = st.session_state["product_info"]
+        time.sleep(3)
         assistant_msg = (
             "**タイトル提案:**\n\n"
             f"- **提案1:** {product_info['タイトル提案1']}\n"
@@ -132,6 +134,7 @@ if user_input:
             points = [p.strip() for p in text.split(":") if p.strip()]
             return "\n".join(f"  - {p}" for p in points)
 
+        time.sleep(3)
         formatted_appeal_points = (
             "### 訴求軸:\n\n"
             f"**自社製品訴求軸:**\n{format_appeal_points(product_info['自社製品訴求軸'])}\n\n"
@@ -157,6 +160,7 @@ if user_input:
             ]
             return "\n".join(f"- {p}" for p in points)
 
+        time.sleep(3)
         formatted_bullet_points = (
             f"**提案1**:\n{format_bullet_points(product_info['箇条書き説明提案1'])}\n\n"
             f"**提案2**:\n{format_bullet_points(product_info['箇条書き説明提案2'])}\n\n"
@@ -176,6 +180,7 @@ if user_input:
         and user_input.lower() == "次へ"
     ):
         product_info = st.session_state["product_info"]
+        time.sleep(3)
         assistant_msg = (
             "### 詳細説明文提案:\n\n"
             f"- **説明1:** {product_info['説明文提案1']}\n"
